@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Part Shortage Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #14171c;
+    --panel: #1b1f26;
+    --panel-2: #21262f;
+    --line: #2c323d;
+    --text: #e8eaed;
+    --muted: #8b93a1;
+    --dom: #4c8bf5;
+    --dom-dim: #2a3f63;
+    --exp: #f5a623;
+    --exp-dim: #5a4520;
+    --danger: #e5484d;
+    --ok: #3ecf8e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:'IBM Plex Sans Thai','IBM Plex Mono',sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{min-height:100vh;}
+
+  .wrap{max-width:1000px;margin:0 auto;padding:14px 14px 40px;}
+
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+    padding-bottom:12px;border-bottom:2px solid var(--line);margin-bottom:14px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
+  .brand .tag{
+    font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;
+    background:var(--text);color:var(--bg);padding:4px 8px;border-radius:3px;
+    transform:rotate(-2deg);}
+  .brand h1{font-family:'Oswald',sans-serif;font-weight:600;font-size:19px;letter-spacing:.02em;margin:0;}
+  .brand small{display:block;color:var(--muted);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
+
+  .datebox{display:flex;align-items:center;gap:6px;background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;padding:6px 10px;}
+  .datebox label{font-size:11px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:.08em;text-transform:uppercase;}
+  .datebox input[type=date]{background:transparent;border:none;color:var(--text);
+    font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;}
+
+  .modeswitch{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .modeswitch button{border:none;background:transparent;color:var(--muted);
+    font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.06em;font-size:12px;
+    padding:8px 14px;cursor:pointer;transition:.15s;}
+  .modeswitch button.active{background:var(--text);color:var(--bg);}
+
+  .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:16px;}
+  .iconbtn:hover{color:var(--text);border-color:var(--muted);}
+
+  .stamp{
+    position:fixed;bottom:16px;right:16px;z-index:50;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.03em;
+    border:1.5px solid var(--ok);color:var(--ok);border-radius:6px;
+    padding:6px 10px;background:rgba(20,23,28,.9);backdrop-filter:blur(4px);
+    transform:rotate(-1.5deg);display:flex;align-items:center;gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+  }
+  .stamp.offline{border-color:var(--danger);color:var(--danger);}
+  .stamp .dot{width:6px;height:6px;border-radius:50%;background:currentColor;
+    animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .tabs{display:flex;gap:8px;margin-bottom:12px;}
+  .tab{flex:1;border:1.5px solid var(--line);background:var(--panel);
+    border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;
+    display:flex;align-items:center;justify-content:space-between;}
+  .tab .name{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.06em;font-size:14px;}
+  .tab .count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+    background:var(--panel-2);border-radius:20px;padding:2px 9px;}
+  .tab.dom.active{border-color:var(--dom);background:linear-gradient(180deg,var(--dom-dim),var(--panel));}
+  .tab.exp.active{border-color:var(--exp);background:linear-gradient(180deg,var(--exp-dim),var(--panel));}
+  .tab.dom.active .name{color:var(--dom);}
+  .tab.exp.active .name{color:var(--exp);}
+
+  .formcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin-bottom:14px;}
+  .formcard h3{margin:0 0 10px;font-family:'Oswald',sans-serif;font-size:12px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .field{display:flex;flex-direction:column;gap:3px;}
+  .field.span2{grid-column:span 2;}
+  .field label{font-size:10.5px;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:.05em;}
+  .field input, .field textarea{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:7px 8px;font-size:13px;font-family:'IBM Plex Mono',monospace;
+    outline:none;}
+  .field input:focus, .field textarea:focus{border-color:var(--dom);}
+  .formactions{display:flex;gap:8px;margin-top:10px;align-items:center;}
+  button.primary{
+    background:var(--text);color:var(--bg);border:none;border-radius:6px;
+    padding:8px 16px;font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.05em;
+    font-size:12.5px;cursor:pointer;}
+  button.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:6px;
+    padding:8px 14px;font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.05em;
+    font-size:12.5px;cursor:pointer;}
+  button.primary:hover{opacity:.88;}
+  button.ghost:hover{border-color:var(--muted);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+
+  .tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;}
+  thead th{
+    text-align:left;font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    background:var(--panel-2);padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:8px;font-size:12.5px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(255,255,255,.02);}
+  td.remark{color:var(--muted);font-family:'IBM Plex Sans Thai',sans-serif;font-size:12px;}
+  td.qty{text-align:right;font-weight:600;}
+  td.no{color:var(--muted);}
+  .rowactions{display:flex;gap:4px;}
+  .rowactions button{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+  .rowactions button:hover{color:var(--text);border-color:var(--muted);}
+  .rowactions button.del:hover{color:var(--danger);border-color:var(--danger);}
+
+  .empty{padding:40px 14px;text-align:center;color:var(--muted);font-family:'Oswald',sans-serif;letter-spacing:.03em;}
+
+  body.dashboard .tablewrap td, body.dashboard .tablewrap th{font-size:15px;padding:12px 10px;}
+  body.dashboard .brand h1{font-size:22px;}
+  body.dashboard .field, body.dashboard .formcard{display:none !important;}
+
+  .setup-banner{
+    background:var(--exp-dim);border:1px solid var(--exp);color:var(--exp);
+    border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;
+    font-family:'IBM Plex Mono',monospace;line-height:1.6;
+  }
+  .setup-banner button{margin-top:8px;}
+
+  /* settings modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:16px;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:18px;max-width:420px;width:100%;}
+  .modal h2{margin:0 0 4px;font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:.04em;}
+  .modal p.hint{color:var(--muted);font-size:12px;margin:0 0 14px;line-height:1.5;}
+  .modal .field{margin-bottom:10px;}
+  .modal .field label{font-size:11px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+
+  @media (max-width:640px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .field.span2{grid-column:span 2;}
+    header{flex-direction:column;align-items:stretch;}
+    .brand{margin-right:0;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="tag">SHORTAGE</span>
+      <div>
+        <h1>Part Shortage Board</h1>
+        <small id="machineLabel">This machine's mode: —</small>
+      </div>
+    </div>
+    <div class="datebox">
+      <label>Date</label>
+      <input type="date" id="dateInput" />
+    </div>
+    <div class="modeswitch">
+      <button id="btnInputMode">INPUT</button>
+      <button id="btnDashMode">DASHBOARD</button>
+    </div>
+    <button class="iconbtn" id="btnSettings" title="GitHub settings">⚙</button>
+  </header>
+
+  <div id="setupBanner" class="setup-banner" style="display:none;"></div>
+
+  <div class="tabs">
+    <div class="tab dom active" id="tabDom">
+      <span class="name">DOMESTIC</span>
+      <span class="count" id="countDom">0</span>
+    </div>
+    <div class="tab exp" id="tabExp">
+      <span class="name">EXPORT</span>
+      <span class="count" id="countExp">0</span>
+    </div>
+  </div>
+
+  <div class="formcard" id="formCard">
+    <h3 id="formTitle">Add item — Domestic</h3>
+    <div class="grid">
+      <div class="field"><label>Group Model</label><input id="f_group" placeholder="LED_MAZDA"/></div>
+      <div class="field"><label>Model No.</label><input id="f_modelno" placeholder="3ST05WD"/></div>
+      <div class="field span2"><label>Model Name</label><input id="f_modelname" placeholder="W003T37871TT"/></div>
+      <div class="field"><label>Suffix</label><input id="f_suffix" placeholder="#"/></div>
+      <div class="field"><label>Q'ty</label><input id="f_qty" type="number" placeholder="1295"/></div>
+      <div class="field"><label>Slip No.</label><input id="f_slip" placeholder="SDO2608210"/></div>
+      <div class="field span2"><label>Remark</label><input id="f_remark" placeholder="Load @13.30"/></div>
+    </div>
+    <div class="formactions">
+      <button class="primary" id="btnAdd">+ Add item</button>
+      <button class="ghost" id="btnCancelEdit" style="display:none;">Cancel edit</button>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px;">No</th>
+          <th>Group Model</th>
+          <th>Model No.</th>
+          <th>Model Name</th>
+          <th>Suffix</th>
+          <th style="text-align:right;">Q'ty</th>
+          <th>Slip No.</th>
+          <th>Remark</th>
+          <th id="thActions" style="width:80px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyState" style="display:none;">No shortage items for this date yet</div>
+  </div>
+
+</div>
+
+<div class="stamp offline" id="syncStamp"><span class="dot"></span><span id="syncText">NOT CONFIGURED</span></div>
+
+<!-- ================= Settings modal ================= -->
+<div class="modal-backdrop" id="modalBackdrop" style="display:none;">
+  <div class="modal">
+    <h2>GitHub connection</h2>
+    <p class="hint">
+      Data is saved as JSON files committed to a GitHub repo. Needs a
+      Personal Access Token with <b>Contents: Read and write</b> on that repo only.
+      See README-github.md for how to create one. This is stored only in this
+      browser's localStorage — set it once per machine.
+    </p>
+    <div class="field"><label>Repo owner (username or org)</label><input id="s_owner" placeholder="your-github-username"/></div>
+    <div class="field"><label>Repository name</label><input id="s_repo" placeholder="part-shortage-board"/></div>
+    <div class="field"><label>Branch</label><input id="s_branch" placeholder="main"/></div>
+    <div class="field"><label>Personal Access Token</label><input id="s_token" type="password" placeholder="github_pat_..."/></div>
+    <div class="modal-actions">
+      <button class="ghost" id="btnSettingsCancel">Cancel</button>
+      <button class="primary" id="btnSettingsSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Data is stored as JSON files inside this GitHub repo, at
+// data/YYYY-MM-DD.json — read/written via the GitHub Contents API.
+// No Firebase, no other backend.
+// ============================================================
+
+const LS_SETTINGS = 'ps_gh_settings';
+const LS_MODE = 'ps_mode';
+const POLL_MS = 15000;
+
+let mode = localStorage.getItem(LS_MODE) || 'input';
+let activeTab = 'dom';
+let editingIndex = null;
+let currentDoc = { dom: [], exp: [] };
+let currentSha = null;
+let pollTimer = null;
+let saving = false;
+
+const $ = (id) => document.getElementById(id);
+
+function getSettings(){
+  try{ return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
+function settingsReady(){
+  const s = getSettings();
+  return !!(s.owner && s.repo && s.token);
+}
+
+function todayStr(){
+  const d = new Date();
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d - tzOffset).toISOString().slice(0,10);
+}
+
+// ---------- base64 helpers (UTF-8 safe) ----------
+function b64Encode(str){
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+    (m, p1) => String.fromCharCode('0x' + p1)));
+}
+function b64Decode(str){
+  return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c =>
+    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
+// ---------- GitHub Contents API ----------
+function ghHeaders(){
+  const s = getSettings();
+  return {
+    'Authorization': 'Bearer ' + s.token,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+function ghPath(date){
+  const s = getSettings();
+  const branch = s.branch || 'main';
+  return `https://api.github.com/repos/${s.owner}/${s.repo}/contents/data/${date}.json?ref=${encodeURIComponent(branch)}`;
+}
+function ghPutUrl(date){
+  const s = getSettings();
+  return `https://api.github.com/repos/${s.owner}/${s.repo}/contents/data/${date}.json`;
+}
+
+async function ghGet(date){
+  const res = await fetch(ghPath(date), { headers: ghHeaders() });
+  if(res.status === 404) return { data: { dom: [], exp: [] }, sha: null };
+  if(res.status === 401 || res.status === 403) throw new Error('AUTH');
+  if(!res.ok) throw new Error('GET ' + res.status);
+  const json = await res.json();
+  let data;
+  try{ data = JSON.parse(b64Decode(json.content)); }
+  catch(e){ data = { dom: [], exp: [] }; }
+  return { data: { dom: data.dom || [], exp: data.exp || [] }, sha: json.sha };
+}
+
+async function ghPut(date, data, sha){
+  const s = getSettings();
+  const body = {
+    message: `Update shortage data ${date}`,
+    content: b64Encode(JSON.stringify(data, null, 2)),
+    branch: s.branch || 'main'
+  };
+  if(sha) body.sha = sha;
+  const res = await fetch(ghPutUrl(date), { method:'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  if(res.status === 401 || res.status === 403) throw new Error('AUTH');
+  if(res.status === 409) throw new Error('CONFLICT');
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    throw new Error('PUT ' + res.status + ' ' + (err.message || ''));
+  }
+  const json = await res.json();
+  return json.content.sha;
+}
+
+// ---------- UI state ----------
+function setMode(m){
+  mode = m;
+  localStorage.setItem(LS_MODE, m);
+  document.body.classList.toggle('dashboard', m === 'dashboard');
+  $('btnInputMode').classList.toggle('active', m === 'input');
+  $('btnDashMode').classList.toggle('active', m === 'dashboard');
+  $('machineLabel').textContent = "This machine's mode: " + (m === 'input' ? 'INPUT (data entry)' : 'DASHBOARD (view only)');
+  render();
+}
+
+function setTab(t){
+  activeTab = t;
+  $('tabDom').classList.toggle('active', t === 'dom');
+  $('tabExp').classList.toggle('active', t === 'exp');
+  $('formTitle').textContent = 'Add item — ' + (t === 'dom' ? 'Domestic' : 'Export');
+  cancelEdit();
+  render();
+}
+
+function setSync(state, text){
+  const el = $('syncStamp');
+  el.classList.toggle('offline', state !== 'online');
+  $('syncText').textContent = text + ' · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+}
+
+function showBanner(msg, showSettingsBtn){
+  const b = $('setupBanner');
+  b.style.display = 'block';
+  b.innerHTML = msg;
+  if(showSettingsBtn){
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = 'Open settings';
+    btn.onclick = openSettings;
+    b.appendChild(btn);
+  }
+}
+function hideBanner(){ $('setupBanner').style.display = 'none'; }
+
+async function loadForDate(dateStr, silent){
+  if(!settingsReady()){
+    showBanner('⚠ GitHub is not configured yet. Data will not load or save until you set the repo owner, repo name, and a token.', true);
+    setSync('offline', 'NOT CONFIGURED');
+    currentDoc = { dom: [], exp: [] };
+    currentSha = null;
+    render();
+    return;
+  }
+  hideBanner();
+  if(!silent) setSync('connecting', 'LOADING…');
+  try{
+    const { data, sha } = await ghGet(dateStr);
+    // Don't clobber an in-progress edit with a background poll
+    if(editingIndex !== null && silent) return;
+    currentDoc = data;
+    currentSha = sha;
+    setSync('online', 'SYNCED');
+    render();
+  }catch(e){
+    console.error(e);
+    if(e.message === 'AUTH'){
+      showBanner('⚠ GitHub rejected the token (401/403). Check the token is valid and has Contents: Read and write on this repo.', true);
+      setSync('offline', 'AUTH ERROR');
+    } else {
+      setSync('offline', 'LOAD FAILED');
+    }
+  }
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(()=>{
+    const dateStr = $('dateInput').value || todayStr();
+    loadForDate(dateStr, true);
+  }, POLL_MS);
+}
+
+async function persist(){
+  if(!settingsReady()){
+    showBanner('⚠ GitHub is not configured yet. Open settings to set the repo and token before saving.', true);
+    return;
+  }
+  const dateStr = $('dateInput').value || todayStr();
+  saving = true;
+  setSync('connecting', 'SAVING…');
+  try{
+    const newSha = await ghPut(dateStr, currentDoc, currentSha);
+    currentSha = newSha;
+    setSync('online', 'SAVED');
+  }catch(e){
+    console.error(e);
+    if(e.message === 'CONFLICT'){
+      alert('Someone else saved a change at the same time. Reloading the latest data — please redo your last action.');
+      await loadForDate(dateStr, false);
+    } else if(e.message === 'AUTH'){
+      showBanner('⚠ GitHub rejected the token while saving. Check the token has Contents: Read and write on this repo.', true);
+      setSync('offline', 'AUTH ERROR');
+    } else {
+      alert('Save failed: ' + e.message);
+      setSync('offline', 'SAVE FAILED');
+    }
+  }finally{
+    saving = false;
+    render();
+  }
+}
+
+function render(){
+  const list = currentDoc[activeTab] || [];
+  $('countDom').textContent = (currentDoc.dom || []).length;
+  $('countExp').textContent = (currentDoc.exp || []).length;
+
+  const tbody = $('tbody');
+  tbody.innerHTML = '';
+  $('emptyState').style.display = list.length ? 'none' : 'block';
+
+  list.forEach((row, idx)=>{
+    const tr = document.createElement('tr');
+    const actionsHtml = mode === 'input'
+      ? `<div class="rowactions">
+           <button data-act="edit" data-idx="${idx}">Edit</button>
+           <button data-act="del" class="del" data-idx="${idx}">Delete</button>
+         </div>`
+      : '';
+    tr.innerHTML = `
+      <td class="no">${idx+1}</td>
+      <td>${escapeHtml(row.group)}</td>
+      <td>${escapeHtml(row.modelno)}</td>
+      <td>${escapeHtml(row.modelname)}</td>
+      <td>${escapeHtml(row.suffix)}</td>
+      <td class="qty">${escapeHtml(row.qty)}</td>
+      <td>${escapeHtml(row.slip)}</td>
+      <td class="remark">${escapeHtml(row.remark)}</td>
+      <td>${actionsHtml}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('[data-act="edit"]').forEach(btn=>{
+    btn.addEventListener('click', ()=> startEdit(parseInt(btn.dataset.idx)));
+  });
+  tbody.querySelectorAll('[data-act="del"]').forEach(btn=>{
+    btn.addEventListener('click', ()=> deleteRow(parseInt(btn.dataset.idx)));
+  });
+
+  $('btnAdd').disabled = saving;
+}
+
+function escapeHtml(v){
+  if(v === undefined || v === null) return '';
+  return String(v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+function readForm(){
+  return {
+    group: $('f_group').value.trim(),
+    modelno: $('f_modelno').value.trim(),
+    modelname: $('f_modelname').value.trim(),
+    suffix: $('f_suffix').value.trim(),
+    qty: $('f_qty').value.trim(),
+    slip: $('f_slip').value.trim(),
+    remark: $('f_remark').value.trim(),
+  };
+}
+function clearForm(){
+  ['f_group','f_modelno','f_modelname','f_suffix','f_qty','f_slip','f_remark'].forEach(id => $(id).value = '');
+}
+function fillForm(row){
+  $('f_group').value = row.group || '';
+  $('f_modelno').value = row.modelno || '';
+  $('f_modelname').value = row.modelname || '';
+  $('f_suffix').value = row.suffix || '';
+  $('f_qty').value = row.qty || '';
+  $('f_slip').value = row.slip || '';
+  $('f_remark').value = row.remark || '';
+}
+function startEdit(idx){
+  editingIndex = idx;
+  fillForm(currentDoc[activeTab][idx]);
+  $('btnAdd').textContent = 'Save changes';
+  $('btnCancelEdit').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelEdit(){
+  editingIndex = null;
+  clearForm();
+  $('btnAdd').textContent = '+ Add item';
+  $('btnCancelEdit').style.display = 'none';
+}
+function deleteRow(idx){
+  if(!confirm('Delete this item?')) return;
+  currentDoc[activeTab].splice(idx, 1);
+  persist();
+}
+function addOrUpdate(){
+  const row = readForm();
+  if(!row.group && !row.modelno && !row.modelname){
+    alert('Please fill in at least Group Model / Model No. / Model Name');
+    return;
+  }
+  if(!currentDoc[activeTab]) currentDoc[activeTab] = [];
+  if(editingIndex === null){
+    currentDoc[activeTab].push(row);
+  } else {
+    currentDoc[activeTab][editingIndex] = row;
+  }
+  cancelEdit();
+  persist();
+}
+
+// ---------- settings modal ----------
+function openSettings(){
+  const s = getSettings();
+  $('s_owner').value = s.owner || '';
+  $('s_repo').value = s.repo || '';
+  $('s_branch').value = s.branch || 'main';
+  $('s_token').value = s.token || '';
+  $('modalBackdrop').style.display = 'flex';
+}
+function closeSettings(){ $('modalBackdrop').style.display = 'none'; }
+function saveSettingsFromModal(){
+  const s = {
+    owner: $('s_owner').value.trim(),
+    repo: $('s_repo').value.trim(),
+    branch: $('s_branch').value.trim() || 'main',
+    token: $('s_token').value.trim()
+  };
+  saveSettings(s);
+  closeSettings();
+  loadForDate($('dateInput').value || todayStr(), false);
+}
+
+// ---------- wire up ----------
+$('btnInputMode').addEventListener('click', ()=> setMode('input'));
+$('btnDashMode').addEventListener('click', ()=> setMode('dashboard'));
+$('tabDom').addEventListener('click', ()=> setTab('dom'));
+$('tabExp').addEventListener('click', ()=> setTab('exp'));
+$('btnAdd').addEventListener('click', addOrUpdate);
+$('btnCancelEdit').addEventListener('click', cancelEdit);
+$('dateInput').addEventListener('change', ()=> loadForDate($('dateInput').value, false));
+$('btnSettings').addEventListener('click', openSettings);
+$('btnSettingsCancel').addEventListener('click', closeSettings);
+$('btnSettingsSave').addEventListener('click', saveSettingsFromModal);
+$('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id === 'modalBackdrop') closeSettings(); });
+
+$('dateInput').value = todayStr();
+setMode(mode);
+setTab('dom');
+loadForDate(todayStr(), false);
+startPolling();
+</script>
+</body>
+</html>
