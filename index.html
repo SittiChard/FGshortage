@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Part Shortage Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@600;700;800&family=Arial&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #eef0f1;
+    --panel: #ffffff;
+    --panel-2: #f4f5f6;
+    --line: #1a1a1a;
+    --line-soft: #d7dadd;
+    --text: #111214;
+    --muted: #5a5f66;
+    --dom: #1f6fd1;
+    --dom-head: #cfe2f5;
+    --exp: #e8791a;
+    --exp-head: #fbe0c4;
+    --danger: #c62828;
+    --ok: #1f8f4e;
+    --black-bar: #0c0c0d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:Arial, 'Poppins', sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{min-height:100vh;}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 0 40px;}
+
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    background:var(--black-bar);padding:14px 18px;margin-bottom:20px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
+  .brand h1{font-family:'Anton',sans-serif;font-weight:400;font-size:34px;letter-spacing:.01em;
+    margin:0;color:#e8231b;line-height:1;text-transform:uppercase;}
+  .brand small{display:none;}
+
+  .datebox{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:#fff;border:2px solid #fff;border-radius:4px;padding:4px 14px;min-width:130px;}
+  .datebox .dow{font-family:'Poppins',sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;
+    color:#111;text-transform:uppercase;border-bottom:2px solid #111;padding-bottom:2px;margin-bottom:3px;width:100%;text-align:center;}
+  .datebox input[type=date]{background:transparent;border:none;color:#111;
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:15px;outline:none;text-align:center;width:100%;}
+
+  .modeswitch{display:flex;background:#2a2a2c;border-radius:8px;overflow:hidden;}
+  .modeswitch button{border:none;background:transparent;color:#9a9a9e;
+    font-family:'Poppins',sans-serif;font-weight:700;letter-spacing:.04em;font-size:12px;
+    padding:10px 16px;cursor:pointer;transition:.15s;}
+  .modeswitch button.active{background:#fff;color:#111;}
+
+  .iconbtn{background:#2a2a2c;border:none;color:#9a9a9e;
+    border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:16px;}
+  .iconbtn:hover{color:#fff;}
+
+  .stamp{
+    position:fixed;bottom:16px;right:16px;z-index:50;
+    font-family:'Poppins',monospace;font-size:11px;letter-spacing:.03em;
+    border:1.5px solid var(--ok);color:var(--ok);border-radius:6px;
+    padding:6px 10px;background:rgba(255,255,255,.95);
+    display:flex;align-items:center;gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.15);
+  }
+  .stamp.offline{border-color:var(--danger);color:var(--danger);}
+  .stamp .dot{width:6px;height:6px;border-radius:50%;background:currentColor;
+    animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .tabs{display:flex;gap:8px;margin-bottom:12px;padding:0 18px;}
+  .tab{flex:1;border:2px solid var(--line-soft);background:#fff;
+    border-radius:8px;padding:10px 12px;cursor:pointer;transition:.15s;
+    display:flex;align-items:center;justify-content:space-between;}
+  .tab .name{font-family:'Poppins',sans-serif;font-weight:700;letter-spacing:.02em;font-size:14px;color:var(--muted);}
+  .tab .count{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;color:var(--muted);
+    background:var(--panel-2);border-radius:20px;padding:2px 9px;}
+  .tab.dom.active{border-color:var(--dom);background:#eaf2fc;}
+  .tab.exp.active{border-color:var(--exp);background:#fef1e3;}
+  .tab.dom.active .name{color:var(--dom);}
+  .tab.exp.active .name{color:var(--exp);}
+
+  .formcard{background:#fff;border:2px solid var(--line-soft);border-radius:10px;
+    padding:14px;margin:0 18px 18px;}
+  .formcard h3{margin:0 0 10px;font-family:'Poppins',sans-serif;font-weight:700;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .field{display:flex;flex-direction:column;gap:3px;}
+  .field.span2{grid-column:span 2;}
+  .field label{font-size:11px;color:var(--muted);font-family:'Poppins',sans-serif;font-weight:600;letter-spacing:.03em;}
+  .field input, .field textarea{
+    background:#fff;border:1.5px solid var(--line-soft);border-radius:6px;
+    color:var(--text);padding:8px 9px;font-size:13.5px;font-family:Arial,sans-serif;
+    outline:none;}
+  .field input:focus, .field textarea:focus{border-color:var(--dom);}
+  .formactions{display:flex;gap:8px;margin-top:12px;align-items:center;}
+  button.primary{
+    background:#111;color:#fff;border:none;border-radius:6px;
+    padding:9px 18px;font-family:'Poppins',sans-serif;font-weight:700;letter-spacing:.02em;
+    font-size:13px;cursor:pointer;}
+  button.ghost{
+    background:transparent;color:var(--muted);border:1.5px solid var(--line-soft);border-radius:6px;
+    padding:9px 16px;font-family:'Poppins',sans-serif;font-weight:700;letter-spacing:.02em;
+    font-size:13px;cursor:pointer;}
+  button.primary:hover{opacity:.85;}
+  button.ghost:hover{border-color:var(--muted);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+
+  .tablewrap{background:#fff;border:2px solid var(--line);border-radius:6px;overflow:hidden;
+    margin-bottom:24px;}
+  table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;}
+  thead th{
+    text-align:center;font-family:'Poppins',sans-serif;font-weight:700;font-size:12.5px;
+    letter-spacing:.01em;color:#111;
+    padding:9px 8px;border:1px solid var(--line);white-space:nowrap;}
+  .section.dom thead th{background:var(--dom-head);}
+  .section.exp thead th{background:var(--exp-head);}
+  thead th:nth-child(2), thead th:nth-child(3),
+  thead th:nth-child(6), thead th:nth-child(7){text-align:left;}
+  thead th:nth-child(5){text-align:right;}
+  tbody td{padding:9px 8px;font-size:13.5px;border:1px solid var(--line-soft);vertical-align:middle;color:#111;}
+  tbody tr:nth-child(even){background:#fafafa;}
+  td.remark{color:#333;}
+  td.qty{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+  td.no{color:#111;font-weight:700;text-align:center;}
+  .rowactions{display:flex;gap:4px;justify-content:flex-end;}
+  .rowactions button{
+    background:#fff;border:1.5px solid var(--line-soft);color:var(--muted);
+    border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:600;}
+  .rowactions button:hover{color:#111;border-color:#111;}
+  .rowactions button.del:hover{color:var(--danger);border-color:var(--danger);}
+
+  .empty{padding:36px 14px;text-align:center;color:var(--muted);font-family:'Poppins',sans-serif;font-weight:600;letter-spacing:.02em;}
+
+  body.dashboard .tablewrap td, body.dashboard .tablewrap th{font-size:16px;padding:12px 10px;}
+  body.dashboard .brand h1{font-size:40px;}
+  body.dashboard .field, body.dashboard .formcard{display:none !important;}
+
+  .section{margin-bottom:0;padding:0 18px;}
+  .section-title{display:none;align-items:baseline;justify-content:space-between;
+    padding:6px 2px 10px;font-family:'Poppins',sans-serif;font-weight:800;font-size:26px;
+    letter-spacing:.01em;text-transform:uppercase;}
+  .section-title .count{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;}
+  .section-title.dom{color:var(--dom);}
+  .section-title.exp{color:var(--exp);}
+  .section-spacer{height:22px;}
+
+  /* Input mode: tabs pick which single table is visible/editable */
+  body.input .tabs{display:flex;}
+  body.input .section-title{display:none;}
+  body.input .section-spacer{display:none;}
+
+  /* Dashboard mode: both tables always shown stacked, tabs hidden */
+  body.dashboard .tabs{display:none;}
+  body.dashboard .section-title{display:flex;}
+  body.dashboard .section{display:block !important;}
+
+  .setup-banner{
+    background:#fdecd8;border:2px solid var(--exp);color:#7a4a12;
+    border-radius:8px;padding:12px 14px;margin:0 18px 18px;font-size:12.5px;
+    font-family:Arial,sans-serif;line-height:1.6;
+  }
+  .setup-banner code{background:#fff;padding:1px 4px;border-radius:3px;}
+  .setup-banner button{margin-top:8px;}
+
+  /* settings modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:16px;}
+  .modal{background:#fff;border:2px solid var(--line);border-radius:10px;
+    padding:20px;max-width:420px;width:100%;}
+  .modal h2{margin:0 0 4px;font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;letter-spacing:.01em;color:#111;}
+  .modal p.hint{color:var(--muted);font-size:12px;margin:0 0 14px;line-height:1.5;}
+  .modal .field{margin-bottom:10px;}
+  .modal .field label{font-size:11px;}
+  .modal-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;}
+
+  @media (max-width:640px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .field.span2{grid-column:span 2;}
+    header{flex-direction:column;align-items:stretch;}
+    .brand{margin-right:0;justify-content:center;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div>
+        <h1>Shortage Part</h1>
+        <small id="machineLabel">This machine's mode: —</small>
+      </div>
+    </div>
+    <div class="datebox">
+      <div class="dow" id="dowLabel">—</div>
+      <input type="date" id="dateInput" />
+    </div>
+    <div class="modeswitch">
+      <button id="btnInputMode">INPUT</button>
+      <button id="btnDashMode">DASHBOARD</button>
+    </div>
+    <button class="iconbtn" id="btnSettings" title="GitHub settings">⚙</button>
+  </header>
+
+  <div id="setupBanner" class="setup-banner" style="display:none;"></div>
+
+  <div class="tabs">
+    <div class="tab dom active" id="tabDom">
+      <span class="name">DOMESTIC</span>
+      <span class="count" id="countDom">0</span>
+    </div>
+    <div class="tab exp" id="tabExp">
+      <span class="name">EXPORT</span>
+      <span class="count" id="countExp">0</span>
+    </div>
+  </div>
+
+  <div class="formcard" id="formCard">
+    <h3 id="formTitle">Add item — Domestic</h3>
+    <div class="grid">
+      <div class="field"><label>Group</label><input id="f_group" placeholder="LED_MAZDA"/></div>
+      <div class="field"><label>Model No.</label><input id="f_modelno" placeholder="3ST05WD"/></div>
+      <div class="field"><label>SF</label><input id="f_suffix" placeholder="#"/></div>
+      <div class="field"><label>Short Qty</label><input id="f_qty" type="number" placeholder="1295"/></div>
+      <div class="field"><label>Slip</label><input id="f_slip" placeholder="SDO2608210"/></div>
+      <div class="field span2"><label>Remark</label><input id="f_remark" placeholder="Load @13.30"/></div>
+    </div>
+    <div class="formactions">
+      <button class="primary" id="btnAdd">+ Add item</button>
+      <button class="ghost" id="btnCancelEdit" style="display:none;">Cancel edit</button>
+    </div>
+  </div>
+
+  <div class="section dom" id="sectionDom">
+    <div class="section-title dom"><span>DOMESTIC</span><span class="count" id="countDomBig">0</span></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34px;">No.</th>
+            <th>Group</th>
+            <th>Model No.</th>
+            <th>SF</th>
+            <th>Short Qty</th>
+            <th>Slip</th>
+            <th>Remark</th>
+            <th style="width:80px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDom"></tbody>
+      </table>
+      <div class="empty" id="emptyDom" style="display:none;">No shortage items for this date yet</div>
+    </div>
+  </div>
+
+  <div class="section-spacer"></div>
+
+  <div class="section exp" id="sectionExp">
+    <div class="section-title exp"><span>EXPORT</span><span class="count" id="countExpBig">0</span></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34px;">No.</th>
+            <th>Group</th>
+            <th>Model No.</th>
+            <th>SF</th>
+            <th>Short Qty</th>
+            <th>Slip</th>
+            <th>Remark</th>
+            <th style="width:80px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyExp"></tbody>
+      </table>
+      <div class="empty" id="emptyExp" style="display:none;">No shortage items for this date yet</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="stamp offline" id="syncStamp"><span class="dot"></span><span id="syncText">NOT CONFIGURED</span></div>
+
+<!-- ================= Settings modal ================= -->
+<div class="modal-backdrop" id="modalBackdrop" style="display:none;">
+  <div class="modal">
+    <h2>GitHub connection</h2>
+    <p class="hint">
+      Data is saved as JSON files committed to a GitHub repo. Needs a
+      Personal Access Token with <b>Contents: Read and write</b> on that repo only.
+      See README-github.md for how to create one. This is stored only in this
+      browser's localStorage — set it once per machine.
+    </p>
+    <div class="field"><label>Repo owner (username or org)</label><input id="s_owner" placeholder="your-github-username"/></div>
+    <div class="field"><label>Repository name</label><input id="s_repo" placeholder="part-shortage-board"/></div>
+    <div class="field"><label>Branch</label><input id="s_branch" placeholder="main"/></div>
+    <div class="field"><label>Personal Access Token</label><input id="s_token" type="password" placeholder="github_pat_..."/></div>
+    <div class="modal-actions">
+      <button class="ghost" id="btnTestConn">Test connection</button>
+      <div style="display:flex;gap:8px;">
+        <button class="ghost" id="btnSettingsCancel">Cancel</button>
+        <button class="primary" id="btnSettingsSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Data is stored as JSON files inside this GitHub repo, at
+// data/YYYY-MM-DD.json — read/written via the GitHub Contents API.
+// No Firebase, no other backend.
+// ============================================================
+
+const LS_SETTINGS = 'ps_gh_settings';
+const LS_MODE = 'ps_mode';
+const POLL_MS = 15000;
+
+let mode = localStorage.getItem(LS_MODE) || 'input';
+let activeTab = 'dom';
+let editingIndex = null;
+let currentDoc = { dom: [], exp: [] };
+let currentSha = null;
+let pollTimer = null;
+let saving = false;
+
+const $ = (id) => document.getElementById(id);
+
+function getSettings(){
+  try{ return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
+function settingsReady(){
+  const s = getSettings();
+  return !!(s.owner && s.repo && s.token);
+}
+
+function todayStr(){
+  const d = new Date();
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d - tzOffset).toISOString().slice(0,10);
+}
+
+function updateDow(dateStr){
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const d = new Date(dateStr + 'T00:00:00');
+  $('dowLabel').textContent = isNaN(d.getTime()) ? '—' : days[d.getDay()];
+}
+
+// ---------- base64 helpers (UTF-8 safe) ----------
+function b64Encode(str){
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+    (m, p1) => String.fromCharCode('0x' + p1)));
+}
+function b64Decode(str){
+  return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c =>
+    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
+// ---------- GitHub Contents API ----------
+function ghHeaders(){
+  const s = getSettings();
+  return {
+    'Authorization': 'Bearer ' + s.token,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+function ghPath(date){
+  const s = getSettings();
+  const branch = s.branch || 'main';
+  return `https://api.github.com/repos/${s.owner}/${s.repo}/contents/data/${date}.json?ref=${encodeURIComponent(branch)}`;
+}
+function ghPutUrl(date){
+  const s = getSettings();
+  return `https://api.github.com/repos/${s.owner}/${s.repo}/contents/data/${date}.json`;
+}
+
+async function ghGet(date){
+  const res = await fetch(ghPath(date), { headers: ghHeaders() });
+  if(res.status === 404) return { data: { dom: [], exp: [] }, sha: null };
+  if(res.status === 401 || res.status === 403) throw new Error('AUTH');
+  if(!res.ok) throw new Error('GET ' + res.status);
+  const json = await res.json();
+  let data;
+  try{ data = JSON.parse(b64Decode(json.content)); }
+  catch(e){ data = { dom: [], exp: [] }; }
+  return { data: { dom: data.dom || [], exp: data.exp || [] }, sha: json.sha };
+}
+
+async function ghPut(date, data, sha){
+  const s = getSettings();
+  const body = {
+    message: `Update shortage data ${date}`,
+    content: b64Encode(JSON.stringify(data, null, 2)),
+    branch: s.branch || 'main'
+  };
+  if(sha) body.sha = sha;
+  const res = await fetch(ghPutUrl(date), { method:'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  if(res.status === 401 || res.status === 403) throw new Error('AUTH');
+  if(res.status === 409) throw new Error('CONFLICT');
+  if(res.status === 404) throw new Error('NOTFOUND:' + ghPutUrl(date));
+  if(!res.ok){
+    const err = await res.json().catch(()=>({}));
+    throw new Error('PUT ' + res.status + ' ' + (err.message || ''));
+  }
+  const json = await res.json();
+  return json.content.sha;
+}
+
+// ---------- UI state ----------
+function setMode(m){
+  mode = m;
+  localStorage.setItem(LS_MODE, m);
+  document.body.classList.toggle('dashboard', m === 'dashboard');
+  document.body.classList.toggle('input', m === 'input');
+  $('btnInputMode').classList.toggle('active', m === 'input');
+  $('btnDashMode').classList.toggle('active', m === 'dashboard');
+  $('machineLabel').textContent = "This machine's mode: " + (m === 'input' ? 'INPUT (data entry)' : 'DASHBOARD (view only)');
+  render();
+}
+
+function setTab(t){
+  activeTab = t;
+  $('tabDom').classList.toggle('active', t === 'dom');
+  $('tabExp').classList.toggle('active', t === 'exp');
+  $('formTitle').textContent = 'Add item — ' + (t === 'dom' ? 'Domestic' : 'Export');
+  // Input mode shows only the active tab's table; dashboard mode ignores
+  // this and always shows both (see .section{display:block!important} CSS).
+  $('sectionDom').style.display = (t === 'dom') ? 'block' : 'none';
+  $('sectionExp').style.display = (t === 'exp') ? 'block' : 'none';
+  cancelEdit();
+  render();
+}
+
+function setSync(state, text){
+  const el = $('syncStamp');
+  el.classList.toggle('offline', state !== 'online');
+  $('syncText').textContent = text + ' · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+}
+
+function showBanner(msg, showSettingsBtn){
+  const b = $('setupBanner');
+  b.style.display = 'block';
+  b.innerHTML = msg;
+  if(showSettingsBtn){
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = 'Open settings';
+    btn.onclick = openSettings;
+    b.appendChild(btn);
+  }
+}
+function hideBanner(){ $('setupBanner').style.display = 'none'; }
+
+async function loadForDate(dateStr, silent){
+  if(!settingsReady()){
+    showBanner('⚠ GitHub is not configured yet. Data will not load or save until you set the repo owner, repo name, and a token.', true);
+    setSync('offline', 'NOT CONFIGURED');
+    currentDoc = { dom: [], exp: [] };
+    currentSha = null;
+    render();
+    return;
+  }
+  hideBanner();
+  if(!silent) setSync('connecting', 'LOADING…');
+  try{
+    const { data, sha } = await ghGet(dateStr);
+    // Don't clobber an in-progress edit with a background poll
+    if(editingIndex !== null && silent) return;
+    currentDoc = data;
+    currentSha = sha;
+    setSync('online', 'SYNCED');
+    render();
+  }catch(e){
+    console.error(e);
+    if(e.message === 'AUTH'){
+      showBanner('⚠ GitHub rejected the token (401/403). Check the token is valid and has Contents: Read and write on this repo.', true);
+      setSync('offline', 'AUTH ERROR');
+    } else if(e.message.startsWith('NOTFOUND:')){
+      const url = e.message.slice('NOTFOUND:'.length);
+      showBanner('⚠ GitHub returned 404 Not Found while loading:<br><code style="word-break:break-all;">' + url +
+        '</code><br>Check the <b>owner</b>, <b>repository name</b>, and <b>branch</b> in Settings exactly match the repo on github.com.', true);
+      setSync('offline', 'REPO NOT FOUND');
+    } else {
+      setSync('offline', 'LOAD FAILED');
+    }
+  }
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(()=>{
+    const dateStr = $('dateInput').value || todayStr();
+    loadForDate(dateStr, true);
+  }, POLL_MS);
+}
+
+async function persist(){
+  if(!settingsReady()){
+    showBanner('⚠ GitHub is not configured yet. Open settings to set the repo and token before saving.', true);
+    return;
+  }
+  const dateStr = $('dateInput').value || todayStr();
+  saving = true;
+  setSync('connecting', 'SAVING…');
+  try{
+    const newSha = await ghPut(dateStr, currentDoc, currentSha);
+    currentSha = newSha;
+    setSync('online', 'SAVED');
+  }catch(e){
+    console.error(e);
+    if(e.message === 'CONFLICT'){
+      alert('Someone else saved a change at the same time. Reloading the latest data — please redo your last action.');
+      await loadForDate(dateStr, false);
+    } else if(e.message === 'AUTH'){
+      showBanner('⚠ GitHub rejected the token while saving. Check the token has Contents: Read and write on this repo.', true);
+      setSync('offline', 'AUTH ERROR');
+    } else if(e.message.startsWith('NOTFOUND:')){
+      const url = e.message.slice('NOTFOUND:'.length);
+      showBanner('⚠ GitHub returned 404 Not Found for:<br><code style="word-break:break-all;">' + url +
+        '</code><br>This almost always means the <b>owner</b> or <b>repository name</b> in Settings doesn\'t exactly match ' +
+        'the real GitHub repo (check spelling/case), or the branch name is wrong (check the repo\'s actual default branch). ' +
+        'Open Settings and re-check each field against the repo\'s URL on github.com.', true);
+      setSync('offline', 'REPO NOT FOUND');
+    } else {
+      alert('Save failed: ' + e.message);
+      setSync('offline', 'SAVE FAILED');
+    }
+  }finally{
+    saving = false;
+    render();
+  }
+}
+
+function renderTable(tab, tbodyEl, emptyEl){
+  const list = currentDoc[tab] || [];
+  tbodyEl.innerHTML = '';
+  emptyEl.style.display = list.length ? 'none' : 'block';
+
+  list.forEach((row, idx)=>{
+    const tr = document.createElement('tr');
+    // Edit/delete only make sense in Input mode, and only for the tab
+    // currently open for editing (dashboard never shows these at all).
+    const actionsHtml = (mode === 'input' && tab === activeTab)
+      ? `<div class="rowactions">
+           <button data-act="edit" data-idx="${idx}">Edit</button>
+           <button data-act="del" class="del" data-idx="${idx}">Delete</button>
+         </div>`
+      : '';
+    tr.innerHTML = `
+      <td class="no">${idx+1}</td>
+      <td>${escapeHtml(row.group)}</td>
+      <td>${escapeHtml(row.modelno)}</td>
+      <td>${escapeHtml(row.suffix)}</td>
+      <td class="qty">${formatQty(row.qty)}</td>
+      <td>${escapeHtml(row.slip)}</td>
+      <td class="remark">${escapeHtml(row.remark)}</td>
+      <td>${actionsHtml}</td>
+    `;
+    tbodyEl.appendChild(tr);
+  });
+
+  tbodyEl.querySelectorAll('[data-act="edit"]').forEach(btn=>{
+    btn.addEventListener('click', ()=> startEdit(parseInt(btn.dataset.idx)));
+  });
+  tbodyEl.querySelectorAll('[data-act="del"]').forEach(btn=>{
+    btn.addEventListener('click', ()=> deleteRow(parseInt(btn.dataset.idx)));
+  });
+}
+
+function render(){
+  const domCount = (currentDoc.dom || []).length;
+  const expCount = (currentDoc.exp || []).length;
+  $('countDom').textContent = domCount;
+  $('countExp').textContent = expCount;
+  $('countDomBig').textContent = domCount;
+  $('countExpBig').textContent = expCount;
+
+  renderTable('dom', $('tbodyDom'), $('emptyDom'));
+  renderTable('exp', $('tbodyExp'), $('emptyExp'));
+
+  $('btnAdd').disabled = saving;
+}
+
+function escapeHtml(v){
+  if(v === undefined || v === null) return '';
+  return String(v).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+function formatQty(v){
+  if(v === undefined || v === null || v === '') return '';
+  const n = Number(v);
+  return isNaN(n) ? escapeHtml(v) : n.toLocaleString('en-US');
+}
+
+function readForm(){
+  return {
+    group: $('f_group').value.trim(),
+    modelno: $('f_modelno').value.trim(),
+    suffix: $('f_suffix').value.trim(),
+    qty: $('f_qty').value.trim(),
+    slip: $('f_slip').value.trim(),
+    remark: $('f_remark').value.trim(),
+  };
+}
+function clearForm(){
+  ['f_group','f_modelno','f_suffix','f_qty','f_slip','f_remark'].forEach(id => $(id).value = '');
+}
+function fillForm(row){
+  $('f_group').value = row.group || '';
+  $('f_modelno').value = row.modelno || '';
+  $('f_suffix').value = row.suffix || '';
+  $('f_qty').value = row.qty || '';
+  $('f_slip').value = row.slip || '';
+  $('f_remark').value = row.remark || '';
+}
+function startEdit(idx){
+  editingIndex = idx;
+  fillForm(currentDoc[activeTab][idx]);
+  $('btnAdd').textContent = 'Save changes';
+  $('btnCancelEdit').style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelEdit(){
+  editingIndex = null;
+  clearForm();
+  $('btnAdd').textContent = '+ Add item';
+  $('btnCancelEdit').style.display = 'none';
+}
+function deleteRow(idx){
+  if(!confirm('Delete this item?')) return;
+  currentDoc[activeTab].splice(idx, 1);
+  persist();
+}
+function addOrUpdate(){
+  const row = readForm();
+  if(!row.group && !row.modelno){
+    alert('Please fill in at least Group or Model No.');
+    return;
+  }
+  if(!currentDoc[activeTab]) currentDoc[activeTab] = [];
+  if(editingIndex === null){
+    currentDoc[activeTab].push(row);
+  } else {
+    currentDoc[activeTab][editingIndex] = row;
+  }
+  cancelEdit();
+  persist();
+}
+
+// ---------- settings modal ----------
+function openSettings(){
+  const s = getSettings();
+  $('s_owner').value = s.owner || '';
+  $('s_repo').value = s.repo || '';
+  $('s_branch').value = s.branch || 'main';
+  $('s_token').value = s.token || '';
+  $('modalBackdrop').style.display = 'flex';
+}
+function closeSettings(){ $('modalBackdrop').style.display = 'none'; }
+function saveSettingsFromModal(){
+  const s = {
+    owner: $('s_owner').value.trim(),
+    repo: $('s_repo').value.trim(),
+    branch: $('s_branch').value.trim() || 'main',
+    token: $('s_token').value.trim()
+  };
+  saveSettings(s);
+  closeSettings();
+  loadForDate($('dateInput').value || todayStr(), false);
+}
+
+async function testConnection(){
+  const owner = $('s_owner').value.trim();
+  const repo = $('s_repo').value.trim();
+  const token = $('s_token').value.trim();
+  if(!owner || !repo || !token){
+    alert('Please fill in owner, repository name, and token first.');
+    return;
+  }
+  const btn = $('btnTestConn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Testing…';
+  btn.disabled = true;
+  try{
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    if(res.status === 404){
+      alert('404 Not Found.\n\nThe owner/repository combination doesn\'t match an accessible repo. ' +
+        'Double-check the exact spelling and capitalization against the repo\'s URL on github.com.');
+    } else if(res.status === 401){
+      alert('401 Unauthorized.\n\nThe token itself is invalid, expired, or wasn\'t copied in full. ' +
+        'Try generating a new fine-grained token and pasting it again.');
+    } else if(!res.ok){
+      alert('Unexpected response: HTTP ' + res.status + '\n\nCheck your internet connection and try again.');
+    } else {
+      const json = await res.json();
+      const canPush = json.permissions && json.permissions.push;
+      if(canPush === false){
+        alert('Connected, but this token does NOT have write access to "' + repo + '".\n\n' +
+          'On GitHub, open the token\'s settings and check:\n' +
+          '1. Repository access includes ' + repo + '\n' +
+          '2. Permissions → Repository permissions → Contents = "Read and write"\n\n' +
+          'Then click Save on GitHub, come back here and click Save (no need to make a new token unless you deleted it).');
+      } else {
+        alert('✓ Connected — repo found and the token looks valid for write access.\n\nYou can click Save now.');
+      }
+    }
+  }catch(e){
+    alert('Network error: ' + e.message);
+  }finally{
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+// ---------- wire up ----------
+$('btnInputMode').addEventListener('click', ()=> setMode('input'));
+$('btnDashMode').addEventListener('click', ()=> setMode('dashboard'));
+$('tabDom').addEventListener('click', ()=> setTab('dom'));
+$('tabExp').addEventListener('click', ()=> setTab('exp'));
+$('btnAdd').addEventListener('click', addOrUpdate);
+$('btnCancelEdit').addEventListener('click', cancelEdit);
+$('dateInput').addEventListener('change', ()=> { updateDow($('dateInput').value); loadForDate($('dateInput').value, false); });
+$('btnSettings').addEventListener('click', openSettings);
+$('btnSettingsCancel').addEventListener('click', closeSettings);
+$('btnSettingsSave').addEventListener('click', saveSettingsFromModal);
+$('btnTestConn').addEventListener('click', testConnection);
+$('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id === 'modalBackdrop') closeSettings(); });
+
+$('dateInput').value = todayStr();
+updateDow(todayStr());
+setMode(mode);
+setTab('dom');
+loadForDate(todayStr(), false);
+startPolling();
+</script>
+</body>
+</html>
