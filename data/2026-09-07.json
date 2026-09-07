@@ -17,6 +17,14 @@
       "qty": "106",
       "slip": "2621523",
       "remark": ""
+    },
+    {
+      "group": "EPS-ECU",
+      "modelno": "Q001T93073H1AT",
+      "suffix": "#",
+      "qty": "368",
+      "slip": "2621521",
+      "remark": ""
     }
   ]
 }
