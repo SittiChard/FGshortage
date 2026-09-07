@@ -1,5 +1,14 @@
 {
-  "dom": [],
+  "dom": [
+    {
+      "group": "6.5G SENSOR",
+      "modelno": "3SXJ01D",
+      "suffix": "#",
+      "qty": "57",
+      "slip": "SFO2604474",
+      "remark": "ทรานเฟอร์แล้ว"
+    }
+  ],
   "exp": [
     {
       "group": "ECU",
