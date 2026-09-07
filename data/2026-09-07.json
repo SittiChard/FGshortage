@@ -9,5 +9,14 @@
       "remark": ""
     }
   ],
-  "exp": []
+  "exp": [
+    {
+      "group": "ECU",
+      "modelno": "F008TE1171ZT",
+      "suffix": "",
+      "qty": "106",
+      "slip": "2621523",
+      "remark": ""
+    }
+  ]
 }
