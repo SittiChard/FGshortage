@@ -1,14 +1,4 @@
 {
-  "dom": [
-    {
-      "group": "",
-      "modelno": "",
-      "modelname": "-",
-      "suffix": "",
-      "qty": "",
-      "slip": "",
-      "remark": ""
-    }
-  ],
+  "dom": [],
   "exp": []
 }
